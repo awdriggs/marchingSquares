@@ -1,5 +1,5 @@
 float[][] noiseField;
-int gridSize = 5;
+int gridSize = 2;
 int cols, rows;
 float inc = 0.01;
 float zoff = 0.0; //used to animate
@@ -13,30 +13,31 @@ void setup(){
 
   /* noLoop(); */
   strokeWeight(1);
-  /* frameRate(1); */
+  /* frameRate(10); */
 }
 
 void draw(){
   //create noiseField
-  background(120);
+  /* background(147, 233, 190); */
+  background(255);
   setField();
   /* seeField(); //visualize what the field look like */
 
-  /* for(float i = 0; i < 1; i+=0.01){ */
-  /*   /1* stroke(0, 0, 0); *1/ */
-  /*   stroke(0); */
-  /*   march(i); */
-  /* } */
+  //when interplated, this isn't working anymore
+  for(float i = 0; i < 1; i+=0.02){
+    /* stroke(0, 0, 0); */
+    stroke(0);
+    march(i);
+  }
 
   /* march(0.1); */
   /* march(0.2); */
   /* march(0.3); */
   /* march(0.4); */
-  march(0.5);
+  /* march(0.5); */
   /* march(0.6); */
 
   zoff += 0.001; //for animating
-
 }
 
 void setField(){
@@ -60,44 +61,56 @@ void seeField(){
       noStroke();
       rect(i * gridSize, j * gridSize, gridSize, gridSize);
 
-      noStroke();
-      fill(0, 255, 0);
-      ellipse(i * gridSize + gridSize / 2, j * gridSize, 20, 20); //A
-      ellipse(i * gridSize + gridSize, j * gridSize + gridSize/2, 20, 20); //B
-      ellipse(i * gridSize + gridSize / 2, j * gridSize + gridSize, 20, 20); //C
-      ellipse(i * gridSize, j * gridSize + gridSize/2, 20, 20); //B
+      /* fill(0, 255, 0); */
+      /* ellipse(i * gridSize + gridSize / 2, j * gridSize, 20, 20); //A */
+      /* ellipse(i * gridSize + gridSize, j * gridSize + gridSize/2, 20, 20); //B */
+      /* ellipse(i * gridSize + gridSize / 2, j * gridSize + gridSize, 20, 20); //C */
+      /* ellipse(i * gridSize, j * gridSize + gridSize/2, 20, 20); //B */
     }
   }
 
 }
 
-void march(float min){
+void march(float threshold){
+
   for (int i = 0; i < cols-1; i++) {
     for (int j = 0; j < rows-1; j++) {
       float x = i * gridSize;
       float y = j * gridSize;
 
-      int tl = noiseField[i][j] > min ? 1 : 0;
-      int tr = noiseField[i+1][j] > min ? 1 : 0;
-      int br = noiseField[i+1][j+1] > min ? 1 : 0;
-      int bl = noiseField[i][j+1] > min ? 1 : 0;
+      int tl = noiseField[i][j] > threshold ? 1 : 0;
+      int tr = noiseField[i+1][j] > threshold ? 1 : 0;
+      int br = noiseField[i+1][j+1] > threshold ? 1 : 0;
+      int bl = noiseField[i][j+1] > threshold ? 1 : 0;
 
       int state = getState(tl, tr, br, bl);
-      /* println(state); */
 
-      float a_val = map(noiseField[i][j], 0, 1,  -1, 1) + 1; //top left
-      float b_val = map(noiseField[i+1][j], 0, 1,  -1, 1) + 1; //top right
-      float c_val = map(noiseField[i+1][j+1], 0, 1, -1, 1) + 1; //bottom right
-      float d_val = map(noiseField[i][j+1], 0, 1, -1, 1) + 1; //bottom left
+      //original used simplex
+      //you are converting to perlin
+      //your mapping becasue perlin noise is 0 to 1 and simplex is -1 to 1
+      /* float a_val = map(noiseField[i][j], 0, 1,  -threshold, threshold) + threshold; //top left */
+      /* float b_val = map(noiseField[i+1][j], 0, 1,  -threshold, threshold) + threshold; //top right */
+      /* float c_val = map(noiseField[i+1][j+1], 0, 1, -threshold, threshold) + threshold; //bottom right */
+      /* float d_val = map(noiseField[i][j+1], 0, 1, -threshold, threshold) + threshold; //bottom left */
 
+      float a_val = noiseField[i][j];
+      float b_val = noiseField[i+1][j];
+      float c_val = noiseField[i+1][j+1];
+      float d_val = noiseField[i][j+1];
 
+      /* if(state != 15 && state != 0){ */
+      /*   println(state); */
+      /*   println(a_val + " " + b_val + " " + c_val + " " + d_val); */
+      /* } */
+
+      
       PVector a = new PVector();
       /* float amt = a_val + (b_val - a_val) * 0.5; */
       /* float amt = 0.5 + (b_val - a_val) * 0.5; */
       /* float amt = (a_val) / (b_val - a_val); */
       /* (threshold - a) / (b - a) */
       /* float amt = a_val / (b_val + a_val); */
-      float amt = (1 - a_val) / (b_val - a_val);
+      float amt = (threshold - a_val) / (b_val - a_val);
       a.x = lerp(x, x + gridSize, amt);
       a.y = y;
 
@@ -105,17 +118,19 @@ void march(float min){
       /* amt = b_val + (c_val - b_val) * 0.5; */
       /* amt = 0.5 + (c_val - b_val) * 0.5; */
       /* amt = (b_val) / (c_val - b_val); */
+
       /* amt = b_val / (c_val + b_val); */
-      amt = (1 - b_val) / (c_val - b_val);
+      amt = (threshold - b_val) / (c_val - b_val);
       b.x = x + gridSize;
       b.y = lerp(y, y+gridSize, amt);
 
       PVector c = new PVector();
       /* amt = c_val + (c_val - d_val) * 0.5; */
       /* amt = 0.5 + (c_val - d_val) * 0.5; */
+
       /* amt = (d_val) / (c_val - d_val); */
       /* amt = c_val / (d_val + c_val); */
-      amt = (1 - d_val) / (c_val - d_val);
+      amt = (threshold - d_val) / (c_val - d_val);
       c.x = lerp(x, x + gridSize, amt);
       c.y = y + gridSize;
 
@@ -124,7 +139,9 @@ void march(float min){
       /* amt = 0.5 + (d_val - a_val) * 0.5; */
       /* amt = (a_val) / (d_val - a_val); */
       /* amt = d_val / (a_val + d_val); */
-      amt = (1 - a_val) / (d_val - a_val);
+
+
+      amt = (threshold - a_val) / (d_val - a_val);
       d.x = x;
       d.y = lerp(y, y + gridSize, amt);
 
@@ -133,7 +150,7 @@ void march(float min){
       /* PVector b = new PVector(x + gridSize, y + gridSize * 0.5); */
       /* PVector c = new PVector(x + gridSize * 0.5, y + gridSize); */
       /* PVector d = new PVector(x, y + gridSize* 0.5); */
-
+      stroke(0);
       switch (state) {
         case 1:
           /* println("case 1"); */
